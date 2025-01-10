@@ -3,89 +3,7 @@
 <head>
     <title>Network Settings Configuration</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .logout-btn {
-            background-color: #dc3545;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        .logout-btn:hover {
-            background-color: #c82333;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #status {
-            margin-top: 20px;
-            padding: 10px;
-            display: none;
-            border-radius: 4px;
-        }
-        .success {
-            background-color: #dff0d8;
-            color: #3c763d;
-            border: 1px solid #d6e9c6;
-        }
-        .error {
-            background-color: #f2dede;
-            color: #a94442;
-            border: 1px solid #ebccd1;
-        }
-        .section {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            border: 1px solid #e9e9e9;
-        }
-        h1, h2 {
-            color: #333;
-        }
+        /* ... (keep existing styles) ... */
     </style>
 </head>
 <body>
@@ -101,17 +19,11 @@
         <div class="section">
             <h2>System Settings</h2>
             <div class="form-group">
-                <label for="os_type">Operating System:</label>
-                <select id="os_type" name="os_type" onchange="updatePorts()">
-                    <option value="Windows">Windows</option>
-                    <option value="Linux">Linux</option>
-                </select>
-            </div>
-            <div class="form-group">
                 <label for="port">Serial Port:</label>
-                <select id="port" name="port">
-                    <!-- Ports will be populated dynamically -->
+                <select id="port" name="port" required>
+                    <option value="">Loading ports...</option>
                 </select>
+                <button type="button" onclick="updatePorts()" style="width: auto; margin-top: 10px;">Refresh Ports</button>
             </div>
             <div class="form-group">
                 <label for="baudrate">Baud Rate:</label>
@@ -129,25 +41,25 @@
             <h2>Network Settings</h2>
             <div class="form-group">
                 <label for="vlan_id">VLAN ID:</label>
-                <input type="number" id="vlan_id" name="vlan_id" min="1" max="4094">
+                <input type="number" id="vlan_id" name="vlan_id" min="1" max="4094" required>
             </div>
             <div class="form-group">
                 <label for="ip_address">IP Address:</label>
                 <input type="text" id="ip_address" name="ip_address" 
                        pattern="^(\d{1,3}\.){3}\d{1,3}$" 
-                       placeholder="e.g., 192.168.1.1">
+                       placeholder="e.g., 192.168.1.1" required>
             </div>
             <div class="form-group">
                 <label for="subnet_mask">Subnet Mask:</label>
                 <input type="text" id="subnet_mask" name="subnet_mask" 
                        pattern="^(\d{1,3}\.){3}\d{1,3}$"
-                       placeholder="e.g., 255.255.255.0">
+                       placeholder="e.g., 255.255.255.0" required>
             </div>
             <div class="form-group">
                 <label for="gateway">Gateway:</label>
                 <input type="text" id="gateway" name="gateway" 
                        pattern="^(\d{1,3}\.){3}\d{1,3}$"
-                       placeholder="e.g., 192.168.1.254">
+                       placeholder="e.g., 192.168.1.254" required>
             </div>
         </div>
 
@@ -156,12 +68,27 @@
     <div id="status"></div>
 
     <script>
+        const LOCAL_CLIENT_URL = 'http://localhost:5001';
+
         async function updatePorts() {
+            const portSelect = document.getElementById('port');
+            portSelect.innerHTML = '<option value="">Loading ports...</option>';
+            
             try {
-                const response = await fetch('/get_ports');
+                console.log('Fetching ports from:', `${LOCAL_CLIENT_URL}/ports`);
+                const response = await fetch(`${LOCAL_CLIENT_URL}/ports`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('Response:', response);
                 const data = await response.json();
-                const portSelect = document.getElementById('port');
-                portSelect.innerHTML = '';
+                console.log('Ports data:', data);
+                
+                portSelect.innerHTML = ''; // Clear the loading message
+                
                 if (data.ports && data.ports.length > 0) {
                     data.ports.forEach(port => {
                         const option = document.createElement('option');
@@ -169,18 +96,20 @@
                         option.textContent = port;
                         portSelect.appendChild(option);
                     });
+                    console.log('Ports loaded successfully');
                 } else {
-                    const option = document.createElement('option');
-                    option.value = "";
-                    option.textContent = "No ports available";
-                    portSelect.appendChild(option);
+                    portSelect.innerHTML = '<option value="">No ports available</option>';
+                    console.log('No ports found');
                 }
             } catch (error) {
-                console.error('Error updating ports:', error);
-                // If error is due to authentication, redirect to login
-                if (error.status === 401) {
-                    window.location.href = '/login';
-                }
+                console.error('Error fetching ports:', error);
+                portSelect.innerHTML = '<option value="">Error loading ports</option>';
+                
+                // Show error in status div
+                const statusDiv = document.getElementById('status');
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'error';
+                statusDiv.textContent = `Error loading ports: ${error.message}. Make sure the local client is running.`;
             }
         }
 
@@ -188,32 +117,33 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = {};
-            
-            // Only include fields that have values
             for (let [key, value] of formData.entries()) {
                 if (value.trim() !== '') {
                     data[key] = value;
                 }
             }
             
-            // Show status
             const statusDiv = document.getElementById('status');
             statusDiv.style.display = 'block';
             
             try {
-                const response = await fetch('/submit_settings', {
+                // Send settings to local client directly
+                const response = await fetch(`${LOCAL_CLIENT_URL}/send`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({
+                        port: data.port,
+                        baudrate: data.baudrate,
+                        settings: {
+                            vlan_id: data.vlan_id,
+                            ip_address: data.ip_address,
+                            subnet_mask: data.subnet_mask,
+                            gateway: data.gateway
+                        }
+                    })
                 });
-                
-                if (response.status === 401) {
-                    // If unauthorized, redirect to login
-                    window.location.href = '/login';
-                    return;
-                }
                 
                 const result = await response.json();
                 
@@ -225,12 +155,13 @@
                     statusDiv.textContent = `Error: ${result.message}`;
                 }
             } catch (error) {
+                console.error('Error:', error);
                 statusDiv.className = 'error';
-                statusDiv.textContent = `Error: ${error.message}`;
+                statusDiv.textContent = `Error: ${error.message}. Make sure the local client is running.`;
             }
         });
 
-        // Initialize ports on page load
+        // Update ports on page load
         updatePorts();
     </script>
 </body>
