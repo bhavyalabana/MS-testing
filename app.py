@@ -6,6 +6,8 @@ import requests
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
+# Near the top of your app.py, after importing Flas
+LOCAL_CLIENT_URL = os.environ.get('LOCAL_CLIENT_URL', 'http://localhost:5001')
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
