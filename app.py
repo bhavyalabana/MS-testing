@@ -6,11 +6,19 @@ import requests
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask_cors import CORS  # Add this import
+
+
+
+
 # Near the top of your app.py, after importing Flas
 LOCAL_CLIENT_URL = os.environ.get('LOCAL_CLIENT_URL', 'http://localhost:5001')
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for the Flask app
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -33,11 +41,14 @@ class SerialManager:
     def get_available_ports():
         """Get list of available serial ports from local client"""
         try:
-            response = requests.get(f"{LOCAL_CLIENT_URL}/ports")
-            response.raise_for_status()
+            response = requests.get('http://localhost:5001/ports')
+            print(f"Response from local client: {response.json()}")  # Debug print
             return response.json().get('ports', [])
+        except requests.exceptions.ConnectionError:
+            print("Could not connect to local client")
+            return []
         except Exception as e:
-            logger.error(f"Error getting serial ports: {e}")
+            print(f"Error getting ports: {str(e)}")
             return []
 
     @staticmethod
