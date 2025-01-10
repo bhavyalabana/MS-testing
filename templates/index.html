@@ -163,7 +163,7 @@
             <h2>System Settings</h2>
             <div class="form-group">
                 <label for="port">Serial Port:</label>
-                <select id="port" name="port" required>
+                <select id="port" name="port">
                     <option value="">Loading ports...</option>
                 </select>
                 <button type="button" onclick="updatePorts()">Refresh Ports</button>
@@ -171,6 +171,7 @@
             <div class="form-group">
                 <label for="baudrate">Baud Rate:</label>
                 <select id="baudrate" name="baudrate">
+                    <option value="">Select baud rate...</option>
                     <option value="9600">9600</option>
                     <option value="19200">19200</option>
                     <option value="38400">38400</option>
@@ -184,25 +185,25 @@
             <h2>Network Settings</h2>
             <div class="form-group">
                 <label for="vlan_id">VLAN ID:</label>
-                <input type="number" id="vlan_id" name="vlan_id" min="1" max="4094" required>
+                <input type="number" id="vlan_id" name="vlan_id" min="1" max="4094">
             </div>
             <div class="form-group">
                 <label for="ip_address">IP Address:</label>
                 <input type="text" id="ip_address" name="ip_address" 
                        pattern="^(\d{1,3}\.){3}\d{1,3}$" 
-                       placeholder="e.g., 192.168.1.1" required>
+                       placeholder="e.g., 192.168.1.1">
             </div>
             <div class="form-group">
                 <label for="subnet_mask">Subnet Mask:</label>
                 <input type="text" id="subnet_mask" name="subnet_mask" 
                        pattern="^(\d{1,3}\.){3}\d{1,3}$"
-                       placeholder="e.g., 255.255.255.0" required>
+                       placeholder="e.g., 255.255.255.0">
             </div>
             <div class="form-group">
                 <label for="gateway">Gateway:</label>
                 <input type="text" id="gateway" name="gateway" 
                        pattern="^(\d{1,3}\.){3}\d{1,3}$"
-                       placeholder="e.g., 192.168.1.254" required>
+                       placeholder="e.g., 192.168.1.254">
             </div>
         </div>
 
@@ -226,7 +227,7 @@
                 });
                 
                 const data = await response.json();
-                portSelect.innerHTML = '';
+                portSelect.innerHTML = '<option value="">Select port...</option>';
                 
                 if (data.ports && data.ports.length > 0) {
                     data.ports.forEach(port => {
@@ -253,6 +254,8 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = {};
+            
+            // Only include fields that have values
             for (let [key, value] of formData.entries()) {
                 if (value.trim() !== '') {
                     data[key] = value;
@@ -269,13 +272,13 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        port: data.port,
-                        baudrate: data.baudrate,
+                        ...(data.port && { port: data.port }),
+                        ...(data.baudrate && { baudrate: data.baudrate }),
                         settings: {
-                            vlan_id: data.vlan_id,
-                            ip_address: data.ip_address,
-                            subnet_mask: data.subnet_mask,
-                            gateway: data.gateway
+                            ...(data.vlan_id && { vlan_id: data.vlan_id }),
+                            ...(data.ip_address && { ip_address: data.ip_address }),
+                            ...(data.subnet_mask && { subnet_mask: data.subnet_mask }),
+                            ...(data.gateway && { gateway: data.gateway })
                         }
                     })
                 });
